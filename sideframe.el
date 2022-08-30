@@ -52,6 +52,8 @@
 ;; - First version
 ;;
 ;;; Code
+(require 'frame)
+
 (defun sideframe--update (&optional frame)
   "Update size and position of FRAME according its maximized state and sideframes."
   
@@ -88,7 +90,6 @@
           (when frame-bottom
             (setq frame-height (- frame-height (frame-pixel-width frame-bottom))))
 
-          (setq frame-resize-pixelwise t)
           (set-frame-position frame frame-x frame-y)
           (set-frame-size frame frame-width frame-height t))
       (progn
@@ -104,10 +105,10 @@
       (modify-frame-parameters frame-right `((top . 0)
                                              (left . ,(frame-pixel-width frame)))))
     (when frame-top
-      (modify-frame-parameters frame-top `((top . ,(* -1 (frame-pixel-width height)))
+      (modify-frame-parameters frame-top `((top . ,(* -1 (frame-pixel-width frame)))
                                            (left . 0))))
     (when frame-bottom
-      (modify-frame-parameters frame-bottom `((top . ,(frame-pixel-width height))
+      (modify-frame-parameters frame-bottom `((top . ,(frame-pixel-width frame))
                                               (left . 0))))))
 
 
