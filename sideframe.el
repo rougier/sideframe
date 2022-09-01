@@ -120,6 +120,7 @@ several sideframes."
   (let* ((screen-width (nth 2 (frame-monitor-geometry)))
          (screen-height (nth 3 (frame-monitor-geometry)))
          (frame (selected-frame))
+         (frame (or (frame-parameter frame 'parent-frame) frame))
          (frame-maximized (frame-parameter frame 'frame-maximized))
          (border-size (frame-parameter frame 'internal-border-width))
          (frame-width (- screen-width (* 2 border-size)))
@@ -128,7 +129,7 @@ several sideframes."
          (frame-y 0))
     (if frame-maximized
         (progn
-          (set-frame-parameter (selected-frame) 'frame-maximized nil)
+          (set-frame-parameter frame 'frame-maximized nil)
           (setq frame-x (frame-parameter frame 'frame-x)
                 frame-y (frame-parameter frame 'frame-y)
                 frame-width (- (frame-parameter frame 'frame-width)
