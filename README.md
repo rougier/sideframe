@@ -5,6 +5,8 @@ If you want to maximize a frame that has sideframes, use the
 `sideframe-toggle-maximized` function that computes the size properly.
 
 
+![](./sideframe.png)
+
 **Usage example**:
 
 ```lisp

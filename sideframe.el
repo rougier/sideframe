@@ -89,7 +89,6 @@
             (setq frame-y (+ frame-y (frame-pixel-height frame-top))))
           (when frame-bottom
             (setq frame-height (- frame-height (frame-pixel-width frame-bottom))))
-
           (set-frame-position frame frame-x frame-y)
           (set-frame-size frame frame-width frame-height t))
       (progn
@@ -148,8 +147,8 @@ several sideframes."
 
 
 
-(defun sideframe-make (position &optional parameters)
-  "Create a fixed size frame at given relative POSITION (left, right, top or bottom).
+(defun sideframe-make (&optional side mode size &rest parameters)
+  "Create a fixed size frame on given SIDE (left, right, top or bottom) with given MODE and SIZE.
 
 Optional argument PARAMETERS is an alist of frame parameters for
 the new frame. Each element of PARAMETERS should have the
@@ -163,7 +162,18 @@ NOTE: Right and bottom configuration require a dynamic update of their positions
       eventually be deleted. In such cases, the position might become wrong. To
       force updating, user can call again the sideframe-make function, this will
       update position."
-  
+
+  (interactive
+   (let* ((completion-ignore-case  t))
+     (list (intern (completing-read "Side (default left): "
+                                    '(left right top bottom) nil t ""))
+           (intern (completing-read "Mode (default light): "
+                            '(light dark) nil t ""))
+           (read-number "Size: " 32))))
+
+  (when mode
+    (add-to-list 'parameters `(background-mode . ,mode)))
+
   (let* ((parent-frame (window-frame))
          (parent-window (frame-first-window parent-frame))
          (parent-width (frame-pixel-width))
@@ -171,14 +181,14 @@ NOTE: Right and bottom configuration require a dynamic update of their positions
          (saved-background-mode frame-background-mode)
          (child-width (or (cdr (assoc 'width parameters)) 32))
          (child-height (or (cdr (assoc 'height parameters)) 8))
-         (child-frame (cond ((eq position 'left)
-                             (frame-parameter parent-frame 'sideframe-left))
-                            ((eq position 'right)
+         (child-frame (cond ((eq side 'right)
                              (frame-parameter parent-frame 'sideframe-right))
-                            ((eq position 'top)
+                            ((eq side 'top)
                              (frame-parameter parent-frame 'sideframe-top))
-                            ((eq position 'bottom)
-                             (frame-parameter parent-frame 'sideframe-bottom))))
+                            ((eq side 'bottom)
+                             (frame-parameter parent-frame 'sideframe-bottom))
+                            (t ;; default is left
+                             (frame-parameter parent-frame 'sideframe-left))))
          (child-background-mode (cdr (assoc 'background-mode parameters)))
          (size-position '()))
 
@@ -204,15 +214,7 @@ NOTE: Right and bottom configuration require a dynamic update of their positions
                                (cdr (assoc 'height parameters))
                                8))))
         
-    (cond ((eq position 'left)
-           (set-frame-parameter parent-frame 'sideframe-left child-frame)
-           (setq size-position `((height . 1.0)
-                                 (width . ,child-width)
-                                 (min-width . ,child-width)
-                                 (keep-ratio . (height-only . nil))
-                                 (top . 0)
-                                 (left . ,(* -1 parent-width)))))
-          ((eq position 'right)
+    (cond ((eq side 'right)
            (set-frame-parameter parent-frame 'sideframe-right child-frame)
            (setq size-position `((height . 1.0)
                                  (width . ,child-width)
@@ -220,7 +222,7 @@ NOTE: Right and bottom configuration require a dynamic update of their positions
                                  (keep-ratio . (height-only . nil))
                                  (top . 0)
                                  (left . ,parent-width))))
-          ((eq position 'top)
+          ((eq side 'top)
            (set-frame-parameter parent-frame 'sideframe-top child-frame)
            (setq size-position `((height . ,child-height)
                                  (min-height . ,child-height)
@@ -228,14 +230,22 @@ NOTE: Right and bottom configuration require a dynamic update of their positions
                                  (keep-ratio . (width-only . nil))
                                  (top . ,(* -1 parent-height))
                                  (left . 0))))
-          ((eq position 'bottom)
+          ((eq side 'bottom)
            (set-frame-parameter parent-frame 'sideframe-bottom child-frame)
            (setq size-position `((height . ,child-height)
                                  (min-height . ,child-height)
                                  (width . 1.0)
                                  (keep-ratio . (width-only . nil))
                                  (top . ,parent-height)
-                                 (left . 0)))))
+                                 (left . 0))))
+          (t ;; default is left
+           (set-frame-parameter parent-frame 'sideframe-left child-frame)
+           (setq size-position `((height . 1.0)
+                                 (width . ,child-width)
+                                 (min-width . ,child-width)
+                                 (keep-ratio . (height-only . nil))
+                                 (top . 0)
+                                 (left . ,(* -1 parent-width))))))
 
     ;; We need to make the frame visible before setting size and position.
     (make-frame-visible child-frame)
