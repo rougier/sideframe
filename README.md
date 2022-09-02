@@ -19,7 +19,7 @@ If you're using a theme that has both dark and light modes, you can also assign
  a different mode to the side frame (here with [nano theme](https://github.com/rougier/nano-theme)):
 
 ```lisp
-(sideframe-make 'left 32 'dark `(((foreground-color . ,nano-dark-foreground)
-                                  (background-color . ,nano-dark-background)))
+(sideframe-make 'left 32 'dark `((foreground-color . ,nano-dark-foreground)
+                                 (background-color . ,nano-dark-background)))
 ```
 
