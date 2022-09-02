@@ -33,17 +33,15 @@
 ;;
 ;; Usage example:
 ;;
-;; (sideframe-make 'left  '((width . 32)))
-;; (sideframe-make 'right '((width . 32)))
+;; (sideframe-make 'left 32)
+;; (sideframe-make 'right 32)
 ;; (sideframe-toggle-maximized)
 ;;
 ;; If you're using a theme that has both dark and light modes, you can also
 ;; assign a different mode to the side frame (here with nano theme):
 ;;
-;; (sideframe-make 'left `((width . 32)
-;;                        (background-mode . dark)
-;;                        (foreground-color . ,nano-dark-foreground)
-;;                        (background-color . ,nano-dark-background)))
+;; (sideframe-make 'left 32 'dark `((foreground-color . ,nano-dark-foreground)
+;;                                  (background-color . ,nano-dark-background)))
 ;;
 ;;
 ;;; NEWS:
@@ -53,6 +51,31 @@
 ;;
 ;;; Code
 (require 'frame)
+
+
+(defgroup sideframe nil
+  "Sideframe"
+  :group 'convenience)
+  
+(defcustom sideframe-default-side 'left
+  "Default side position"
+  :type '(radio (const :tag "Left"   left)
+                (const :tag "Right"  right)
+                (const :tag "Top"    top)
+                (const :tag "Bottom" bottom))
+  :group 'sideframe)
+
+(defcustom sideframe-default-mode 'dark
+  "Default mode"
+  :type '(radio (const :tag "Light" light)
+                (const :tag "Dark"  dark))
+  :group 'sideframe)
+
+(defcustom sideframe-default-size 32
+  "Default size "
+  :type 'natnum
+  :group 'sideframe)
+
 
 (defun sideframe--update (&optional frame)
   "Update size and position of FRAME according its maximized state and sideframes."
@@ -147,7 +170,7 @@ several sideframes."
 
 
 
-(defun sideframe-make (&optional side mode size &rest parameters)
+(defun sideframe-make (&optional side size mode &rest parameters)
   "Create a fixed size frame on given SIDE (left, right, top or bottom) with given MODE and SIZE.
 
 Optional argument PARAMETERS is an alist of frame parameters for
@@ -167,30 +190,41 @@ NOTE: Right and bottom configuration require a dynamic update of their positions
    (let* ((completion-ignore-case  t))
      (list (intern (completing-read "Side (default left): "
                                     '(left right top bottom) nil t ""))
+           (read-number "Size: " sideframe-default-size)
            (intern (completing-read "Mode (default light): "
-                            '(light dark) nil t ""))
-           (read-number "Size: " 32))))
+                            '(light dark) nil t "")))))
 
-  (when mode
-    (add-to-list 'parameters `(background-mode . ,mode)))
-
-  (let* ((parent-frame (window-frame))
+  (let* ((side (if (memq side '(left right top bottom))
+                   side
+                 sideframe-default-size))
+         (mode (if (memq mode '(light dark))
+                   mode
+                 sideframe-default-mode))
+         (size (if (> size 0)
+                   size
+                 sideframe-default-size))
+         (parent-frame (window-frame))
          (parent-window (frame-first-window parent-frame))
          (parent-width (frame-pixel-width))
          (parent-height (frame-pixel-height))
          (saved-background-mode frame-background-mode)
-         (child-width (or (cdr (assoc 'width parameters)) 32))
-         (child-height (or (cdr (assoc 'height parameters)) 8))
+         (child-width (or (cdr (assoc 'width parameters))
+                          size))
+         (child-height (or (cdr (assoc 'height parameters))
+                           size))
          (child-frame (cond ((eq side 'right)
                              (frame-parameter parent-frame 'sideframe-right))
                             ((eq side 'top)
                              (frame-parameter parent-frame 'sideframe-top))
                             ((eq side 'bottom)
                              (frame-parameter parent-frame 'sideframe-bottom))
-                            (t ;; default is left
+                            (t ;; left
                              (frame-parameter parent-frame 'sideframe-left))))
          (child-background-mode (cdr (assoc 'background-mode parameters)))
          (size-position '()))
+
+    (when mode
+      (add-to-list 'parameters `(background-mode . ,mode)))
 
     (if (or (not (framep child-frame)) (not (frame-live-p child-frame)))
         (progn
@@ -238,7 +272,7 @@ NOTE: Right and bottom configuration require a dynamic update of their positions
                                  (keep-ratio . (width-only . nil))
                                  (top . ,parent-height)
                                  (left . 0))))
-          (t ;; default is left
+          (t ;; left
            (set-frame-parameter parent-frame 'sideframe-left child-frame)
            (setq size-position `((height . 1.0)
                                  (width . ,child-width)
