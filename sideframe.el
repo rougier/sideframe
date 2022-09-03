@@ -170,7 +170,7 @@ several sideframes."
 
 
 
-(defun sideframe-make (&optional side size mode &rest parameters)
+(defun sideframe-make (&optional side size mode parameters)
   "Create a fixed size frame on given SIDE (left, right, top or bottom) with given MODE and SIZE.
 
 Optional argument PARAMETERS is an alist of frame parameters for
@@ -220,7 +220,7 @@ NOTE: Right and bottom configuration require a dynamic update of their positions
                              (frame-parameter parent-frame 'sideframe-bottom))
                             (t ;; left
                              (frame-parameter parent-frame 'sideframe-left))))
-         (child-background-mode (cdr (assoc 'background-mode parameters)))
+         (child-background-mode (or (cdr (assoc 'background-mode parameters)) mode))
          (size-position '()))
 
     (when mode
